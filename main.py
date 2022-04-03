@@ -1,13 +1,13 @@
+import random
 import sys
+import time
 from tkinter import *
-from turtle import *
-import logging
 from canvasutils import *
-from tkinter import colorchooser
 
 root = Tk()
 bg_color = "#ffffff"
-
+note = "A#"
+busy = False
 
 def main(window):
     global bg_color
@@ -20,14 +20,18 @@ def main(window):
     tkinter_version = Tcl().eval("info patchlevel")
     logging.debug(f"Using {tkinter_version}")
 
-    canvas, turtle, button = initialize_ui(window=window)
+    canvas, turtle = initialize_ui(window=window)
 
-
+    prepare(turtle)
 
     root.mainloop()
 
 
 def initialize_ui(window):
+    window.title("Guess The Note")
+    window.configure(background="#2e2e2e")
+    window.resizable(False, False)
+
     canvas = Canvas(
         window,
         height=500,
@@ -38,23 +42,24 @@ def initialize_ui(window):
     )
     canvas.grid(padx=10, pady=10)
 
-    actuator_btn = Button(
-        window,
-        text="Start",
-        width="15",
-        height="2",
+    entry = Entry(
+        width=15,
         background="#454545",
-        activebackground="#2b2b2b",
         foreground="#ffffff",
-        activeforeground="#ffffff",
         bd=0,
         highlightthickness=0,
         relief="ridge"
     )
-    actuator_btn.grid(padx=20, pady=20)
+    entry.grid(padx=20, pady=10)
 
-    window.title("Guess The Note")
-    window.configure(background="#2e2e2e")
+    feedback = Label(
+        foreground="#ffffff",
+        background="#2e2e2e",
+        text=""
+    )
+    feedback.grid(pady=10)
+
+    window.bind("<Return>", lambda event: submit_entry(event, feedback, entry, turtle))
 
     turtle = RawTurtle(canvas=canvas)
 
@@ -63,8 +68,64 @@ def initialize_ui(window):
 
     draw_bg(turtle, bg_color)
 
-    return canvas, turtle, actuator_btn
+    return canvas, turtle
 
+
+def submit_entry(event: Event, feedback: Label, entry: Entry, turtle: RawTurtle):
+    global note, busy
+    if busy:
+        return
+
+    busy = True
+    if len(entry.get()) == 0:
+        feedback.config(text="NO INPUT", foreground="#fcba03")
+        return
+
+    if entry.get() != note:
+        feedback.config(text=f"WRONG, it was {note}", foreground="#ff0000")
+    else:
+        feedback.config(text="CORRECT", foreground="#00ff00")
+
+    # TODO play sound
+
+    prepare(turtle)
+    busy = False
+
+
+def prepare(turtle: RawTurtle):
+
+    random_note()
+
+    # reset canvas
+    draw_bg(turtle, bg_color)
+    #   paint over
+    #   paint grand staff
+    #   paint clefs
+    #   paint note
+
+    pass
+
+
+def random_note():
+    global note
+    # get random note
+    base_note = random.choice(["C", "D", "E", "F", "G", "A", "B"])
+
+    append = None
+    match random.randint(1, 3):
+        case 1:
+            # Natural
+            append = ""
+        case 2:
+            # Flat
+            append = "b"
+        case 3:
+            # Sharp
+            append = "#"
+
+
+    note = base_note + append
+    logging.debug(f"Final note: {note}")
 
 
 
